@@ -2,7 +2,7 @@
 
 const {log, biglog, errorlog, colorize} = require("./out");
 
-const model = require('./model');
+const {models} = require('./model');
 
 
 /**
@@ -151,8 +151,22 @@ exports.editCmd = (rl, id) => {
  * @param id Clave del quiz a probar.
  */
 exports.testCmd = (rl, id) => {
-    log('Probar el quiz indicado.', 'red');
-    rl.prompt();
+    if (typeof id === "undefined") {
+        errorlog(`Falta el parámetro id.`);
+        rl.prompt();
+    } else {
+        try {
+
+            const quiz = model.getByIndex(id);
+            rl.question(`${colorize(quiz.question+'?', 'green')}`, answer => {
+                (answer.trim().toLowerCase() === quiz.answer.trim().toLowerCase()) ? biglog('CORRECTO', 'green') : biglog('INCORRECTO', 'red');
+                rl.prompt();})
+
+        } catch (error) {
+            errorlog(error.message);
+            rl.prompt();
+        }
+    }
 };
 
 
@@ -164,7 +178,50 @@ exports.testCmd = (rl, id) => {
  */
 exports.playCmd = rl => {
     log('Jugar.', 'red');
-    rl.prompt();
+    let score = 0;
+    let toBeresolved = [];
+    const quizzes = model.getAll();
+
+    for (let i = 0; i < quizzes.length; i++) {
+        toBeresolved.push(i);
+    }
+    const playOne = () => {
+        if (toBeresolved.length === 0) {
+            log('Se acabo el juego');
+            biglog(`Aciertos: ${score}`, 'green');
+            rl.prompt();
+
+        } else {
+            let id;
+            do { id = Math.floor(Math.random() * (toBeresolved.length));}
+            while(toBeresolved.length < id);
+
+            let quiz = quizzes[toBeresolved[id]];
+
+            //darle una vuelta
+            toBeresolved.splice(id, 1);
+            //completar
+            rl.question(`${colorize(quiz.question + '?', 'green')}`, answer => {
+                if (answer.trim().toLowerCase() === quiz.answer.trim().toLowerCase()) {
+                    score++;
+                    log(` ${colorize('CORRECTO', 'green')} - Lleva ${colorize(score, 'green')} aciertos`);
+                    rl.prompt();
+                    playOne();
+
+                } else {
+                    log(' INCORRECTO', 'red');
+                    log(' Fin de play. Aciertos:')
+
+                    biglog(`${score}`, 'magenta');
+
+                    rl.prompt();
+                }
+
+            });
+        }
+
+    };
+    playOne();
 };
 
 
@@ -175,8 +232,7 @@ exports.playCmd = rl => {
  */
 exports.creditsCmd = rl => {
     log('Autores de la práctica:');
-    log('Nombre 1', 'green');
-    log('Nombre 2', 'green');
+    log('Alfonso Moreno Sanz', 'green');
     rl.prompt();
 };
 
