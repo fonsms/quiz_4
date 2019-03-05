@@ -232,51 +232,71 @@ exports.testCmd = (rl, id) => {
  * @param rl Objeto readline usado para implementar el CLI.
  */
 exports.playCmd = rl => {
+
     log('Jugar.', 'red');
     let score = 0;
     let toBeresolved = [];
-    const quizzes = model.getAll();
+    let quizzes= [];
+   models.quiz.findAll()
+   .each(quiz=>{
+       quizzes.push(quiz);
+    })
+   .then(()=>{
+       for (let i = 0; i < quizzes.length; i++){
 
-    for (let i = 0; i < quizzes.length; i++) {
-        toBeresolved.push(i);
-    }
+    toBeresolved.push(i);
+       }
+
+
+
     const playOne = () => {
         if (toBeresolved.length === 0) {
             log('Se acabo el juego');
             biglog(`Aciertos: ${score}`, 'green');
             rl.prompt();
-
-        } else {
+        }else {
             let id;
-            do { id = Math.floor(Math.random() * (toBeresolved.length));}
-            while(toBeresolved.length < id);
+            do {
+                id = Math.floor(Math.random() * (toBeresolved.length));
+            }
+            while (toBeresolved.length < id);
 
             let quiz = quizzes[toBeresolved[id]];
 
             //darle una vuelta
             toBeresolved.splice(id, 1);
             //completar
-            rl.question(`${colorize(quiz.question + '?', 'green')}`, answer => {
-                if (answer.trim().toLowerCase() === quiz.answer.trim().toLowerCase()) {
-                    score++;
-                    log(` ${colorize('CORRECTO', 'green')} - Lleva ${colorize(score, 'green')} aciertos`);
-                    rl.prompt();
-                    playOne();
+            makeQuestion(rl, `${quiz.question}`)
+                .then(a => {
+                    if (a.toLowerCase() === quiz.answer.trim().toLowerCase()) {
+                        score++;
+                        log(` ${colorize('CORRECTO', 'green')} - Lleva ${colorize(score, 'green')} aciertos`);
+                        rl.prompt();
+                        playOne();
 
-                } else {
-                    log(' INCORRECTO', 'red');
-                    log(' Fin de play. Aciertos:')
+                    } else {
+                        log(' INCORRECTO', 'red');
+                        log(' Fin de play. Aciertos:')
 
-                    biglog(`${score}`, 'magenta');
+                        biglog(`${score}`, 'magenta');
 
-                    rl.prompt();
-                }
-
-            });
-        }
-
+                        rl.prompt();
+                    }
+                });
+    }
     };
-    playOne();
+            playOne();
+    })
+   .catch(Sequelize.ValidationError, error => {
+           errorlog('El quiz es erróneo: ');
+           error.errors.forEach(({message}) => errorlog(message));
+       })
+   .catch(error => {
+       errorlog(error.message);
+   })
+   .then(() => {
+       rl.prompt();
+   });
 };
 
 
