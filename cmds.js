@@ -205,22 +205,23 @@ exports.editCmd = (rl, id) => {
  * @param id Clave del quiz a probar.
  */
 exports.testCmd = (rl, id) => {
-    if (typeof id === "undefined") {
-        errorlog(`Falta el parámetro id.`);
-        rl.prompt();
-    } else {
-        try {
-
-            const quiz = model.getByIndex(id);
-            rl.question(`${colorize(quiz.question+'?', 'green')}`, answer => {
-                (answer.trim().toLowerCase() === quiz.answer.trim().toLowerCase()) ? biglog('CORRECTO', 'green') : biglog('INCORRECTO', 'red');
-                rl.prompt();})
-
-        } catch (error) {
-            errorlog(error.message);
-            rl.prompt();
-        }
-    }
+    validateId(id)
+        .then( id => models.quiz.findById(id))
+        .then( quiz => {
+            if (!quiz) {
+                throw new Error(`No existe un quiz asociado al id = ${id}.`);
+            }
+            makeQuestion(rl, `${quiz.question}`)
+                .then(a => {
+                    (a.toLowerCase() === quiz.answer.trim().toLowerCase()) ? biglog('CORRECTO', 'green') : biglog('INCORRECTO', 'red');
+                })
+                .catch(error => {
+                    out.errorlog(error.message);
+                })
+                .then(() => {
+                    rl.prompt();
+                });
+        })
 };
 
 
