@@ -5,8 +5,11 @@ sequelize.define('quiz',{
         question:{
             type: Sequelize.STRING,
             unique:{msg:"Ya existe esta pregunta"},
-            validate: {notEmpty: {msg:"La respuesta no puede estar vacía"}
-                }
+            validate: {notEmpty: {msg:"La respuesta no puede estar vacía"}}
+            },
+        answer:{
+            type: Sequelize.STRING,
+            validate: { notEmpty :{ msg:"La pregunta no puede estar vacía"}}
         }
 });
 sequelize.sync()
