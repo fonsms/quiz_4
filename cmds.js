@@ -213,15 +213,31 @@ exports.testCmd = (rl, id) => {
             }
             makeQuestion(rl, `${quiz.question}`)
                 .then(a => {
-                    (a.toLowerCase() === quiz.answer.trim().toLowerCase()) ? biglog('CORRECTO', 'green') : biglog('INCORRECTO', 'red');
+                   if (a.toLowerCase() === quiz.answer.trim().toLowerCase()){
+                       log('Su respuesta es correcta. ');
+                       biglog('CORRECTO', 'green')}
+                   else{
+                       log('Su respuesta es incorrecta. ');
+                       biglog('INCORRECTO', 'red');}
                 })
                 .catch(error => {
+
                     out.errorlog(error.message);
                 })
                 .then(() => {
                     rl.prompt();
                 });
         })
+        .catch(Sequelize.ValidationError, error => {
+            errorlog('El quiz es erróneo: ');
+            error.errors.forEach(({message}) => errorlog(message));
+        })
+        .catch(error => {
+            errorlog(error.message);
+        })
+        .then(() => {
+            rl.prompt();
+        });
 };
 
 
@@ -270,7 +286,7 @@ exports.playCmd = rl => {
                 .then(a => {
                     if (a.toLowerCase() === quiz.answer.trim().toLowerCase()) {
                         score++;
-                        log(` ${colorize('CORRECTO', 'green')} - Lleva ${colorize(score, 'green')} aciertos`);
+                        log(` ${colorize('CORRECTO', 'green')} - Lleva aciertos: ${colorize(score, 'green')}`);
                         rl.prompt();
                         playOne();
 
